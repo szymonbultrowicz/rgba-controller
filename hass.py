@@ -1,7 +1,6 @@
 from urequests import request
 from models import LightState
 import secrets
-import ujson
 import config
 
 
