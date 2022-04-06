@@ -2,6 +2,7 @@ from machine import Pin, ADC, Timer, I2C, deepsleep
 from ujson import dumps
 import time
 import ssd1306
+import config
 
 from models import LightState, AnalogueValue
 from hass import fetch_state, update_state
@@ -17,9 +18,11 @@ pin_pot_color_temp.atten(ADC.ATTN_11DB)
 pin_pot_color_temp.width(ADC.WIDTH_9BIT)
 pin_switch = Pin(27, Pin.IN)
 
-i2c = I2C(0)
-display = ssd1306.SSD1306_I2C(128, 64, i2c)
-display.poweron()
+if(config.display_available):
+    display = ssd1306.SSD1306_I2C(128, 64, I2C(0))
+    display.poweron()
+else:
+    display = None
 
 last_clk = 0
 last_pot_sw = 1
@@ -58,11 +61,15 @@ def apply_value(analogue_value, value, ema_a):
     return False
 
 def display_print(text):
+    if(not config.display_available):
+        return
     display.fill(0)
     display.text(text, 0, 0)
     display.show()
 
 def update_display(display, light_state):
+    if(not config.display_available):
+        return
     display.fill(0)
     display.text(str(round(light_state.brightness.value * 100 / 255)) + '%', 0, 0)
     display.text(str(convert_mired_to_kelvin(light_state.color_temp.value)) + 'K', 128 - (5 * 8), 0)
