@@ -2,9 +2,11 @@ from urequests import request
 from models import LightState
 import secrets
 import ujson
+import config
+
 
 def fetch_state():
-    response = request("GET", secrets.api_endpoint + "states/light.elgato_szymon_s_desk", headers={
+    response = request("GET", secrets.api_endpoint + "states/" + config.entity_id, headers={
         "Authorization": "Bearer " + secrets.api_token,
     })
 
@@ -20,8 +22,8 @@ def fetch_state():
     return light_state
 
 def update_state(state):
-    data = {"entity_id": "light.elgato_szymon_s_desk"} if not state.state else {
-        "entity_id": "light.elgato_szymon_s_desk",
+    data = {"entity_id": config.entity_id} if not state.state else {
+        "entity_id": config.entity_id,
         "brightness": state.brightness.value,
         "color_temp": state.color_temp.value,
     }
