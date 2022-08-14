@@ -21,6 +21,7 @@ def fetch_state():
     return light_state
 
 def update_state(state, toast_print):
+    toast_print("Applying")
     data = {"entity_id": config.entity_id} if not state.state else {
         "entity_id": config.entity_id,
         "brightness": state.brightness.value,
