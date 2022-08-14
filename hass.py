@@ -20,7 +20,7 @@ def fetch_state():
     )
     return light_state
 
-def update_state(state):
+def update_state(state, toast_print):
     data = {"entity_id": config.entity_id} if not state.state else {
         "entity_id": config.entity_id,
         "brightness": state.brightness.value,
@@ -30,3 +30,4 @@ def update_state(state):
         "Authorization": "Bearer " + secrets.api_token,
     }, json=data)
     print("Update response code: " + str(response.status_code))
+    toast_print("Updated (" + str(response.status_code) + ")", True)
