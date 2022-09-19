@@ -1,5 +1,6 @@
 import math
 from machine import Pin, ADC, Timer, I2C, deepsleep
+import machine
 import time
 import ssd1306
 import esp32
@@ -146,7 +147,8 @@ toast_print("Connecting")
 import wifi
 wifi.do_connect()
 
-turn_on(toast_print)
+if machine.reset_cause() == machine.DEEPSLEEP:
+    turn_on(toast_print)
 
 toast_print("Fetching state")
 
