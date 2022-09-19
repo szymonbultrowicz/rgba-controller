@@ -24,9 +24,10 @@ def fetch_state():
 
 def turn_on(toast_print):
     toast_print("Turning on")
+    data = {"entity_id": config.entity_id}
     response = request("POST", secrets.api_endpoint + "services/light/turn_on", headers={
         "Authorization": "Bearer " + secrets.api_token,
-    })
+    }, json=data)
     response.close()
 
 def update_state(state, toast_print):
