@@ -24,6 +24,9 @@ pin_pot_color_temp = ADC(Pin(34))
 pin_pot_color_temp.atten(ADC.ATTN_11DB)
 pin_pot_color_temp.width(ADC.WIDTH_9BIT)
 pin_switch = Pin(27, Pin.IN)
+pin_led_builtin = Pin(2, Pin.OUT)
+
+pin_led_builtin.on()
 
 if(config.display_available):
     display = ssd1306.SSD1306_I2C(screen_width, screen_height, I2C(0))
@@ -69,6 +72,7 @@ def apply_value(analogue_value, value, ema_a):
     return False
 
 def toast_print(text, autoclear=False):
+    print(text)
     if(not config.display_available):
         return
     display.fill_rect(0, 0, screen_width, char_height, 0)
@@ -91,13 +95,16 @@ def toast_clear():
     display.show()
 
 def update_display_text(display, light_state):
-    # text
+    if(not config.display_available):
+        return
     v_offset = 28
     display.fill_rect(0, v_offset, screen_width, char_height, 0)
     display.text(str(round(light_state.brightness.value * 100 / 255)) + '%', 0, v_offset)
     display.text(str(convert_mired_to_kelvin(light_state.color_temp.value)) + 'K', screen_width - (5 * char_width), v_offset)
 
 def update_display_temp_bar(display, light_state):
+    if(not config.display_available):
+        return
     v_offset = 40
     bar_height = 10
     display.fill_rect(0, v_offset, screen_width, bar_height, 0)
@@ -110,6 +117,8 @@ def update_display_temp_bar(display, light_state):
     display.fill_rect(char_width + 3 + temp_position, v_offset + 2, 3, bar_height - 4, 0)
 
 def update_display_brightness_bar(display, light_state):
+    if(not config.display_available):
+        return
     bar_height = 10
     v_offset = screen_height - 1 - bar_height
     display.fill_rect(0, v_offset, screen_width, bar_height, 0)
@@ -127,7 +136,9 @@ def update_display(display, light_state):
 
 def turn_off(display):
     print('Going to sleep')
-    display.poweroff()
+    if(config.display_available):
+        display.poweroff()
+    pin_led_builtin.off()
     deepsleep()
     # deepsleep()
 
@@ -140,9 +151,9 @@ def refresh_sleep_timer(timer, display):
         callback=lambda t:turn_off(display)
     )
 
-
-display.fill(0)
-toast_print("Connecting")
+if(config.display_available):
+    display.fill(0)
+    toast_print("Connecting")
 
 import wifi
 wifi.do_connect()
@@ -167,6 +178,8 @@ sleep_timer = Timer(2)
 refresh_sleep_timer(sleep_timer, display)
 
 esp32.wake_on_ext0(pin = pin_switch, level = esp32.WAKEUP_ANY_HIGH)
+
+pin_led_builtin.off()
 
 while True:
     changed = False
@@ -200,15 +213,16 @@ while True:
             update_timer.init(
                 mode=Timer.ONE_SHOT,
                 period=500,
-                callback=lambda t:update_state(light_state, toast_print)
+                callback=lambda t:update_state(light_state, toast_print, pin_led_builtin)
             )
         else:
-            update_state(light_state, toast_print)
+            update_state(light_state, toast_print, pin_led_builtin)
 
     if fetch:
+        pin_led_builtin.on()
         toast_print("Fetching state")
         light_state = fetch_state()
         update_display(display, light_state)
-        
+        pin_led_builtin.off()
 
     time.sleep_us(20)

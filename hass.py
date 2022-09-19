@@ -30,16 +30,20 @@ def turn_on(toast_print):
     }, json=data)
     response.close()
 
-def update_state(state, toast_print):
+def update_state(state, toast_print, busy_pin = None):
     toast_print("Applying")
     data = {"entity_id": config.entity_id} if not state.state else {
         "entity_id": config.entity_id,
         "brightness": state.brightness.value,
         "color_temp": state.color_temp.value,
     }
+    if busy_pin is not None:
+        busy_pin.on()
     response = request("POST", secrets.api_endpoint + "services/light/" + ("turn_on" if state.state else "turn_off"), headers={
         "Authorization": "Bearer " + secrets.api_token,
     }, json=data)
     print("Update response code: " + str(response.status_code))
     toast_print("Updated (" + str(response.status_code) + ")", True)
     response.close()
+    if busy_pin is not None:
+        busy_pin.off()
