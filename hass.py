@@ -22,6 +22,13 @@ def fetch_state():
     )
     return light_state
 
+def turn_on(toast_print):
+    toast_print("Turning on")
+    response = request("POST", secrets.api_endpoint + "services/light/turn_on", headers={
+        "Authorization": "Bearer " + secrets.api_token,
+    })
+    response.close()
+
 def update_state(state, toast_print):
     toast_print("Applying")
     data = {"entity_id": config.entity_id} if not state.state else {

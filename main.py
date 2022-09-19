@@ -6,13 +6,12 @@ import esp32
 import config
 
 from models import LightState, AnalogueValue
-from hass import fetch_state, update_state
+from hass import fetch_state, turn_on, update_state
 
 screen_width = 128
 screen_height = 64
 char_width = 8
 char_height = 8
-display_state = True
 
 pin_pot_sw = Pin(4, Pin.IN, Pin.PULL_UP)
 pin_pot_dt = Pin(5, Pin.IN)
@@ -128,8 +127,6 @@ def update_display(display, light_state):
 def turn_off(display):
     print('Going to sleep')
     display.poweroff()
-    # global display_state
-    # display_state = False
     deepsleep()
     # deepsleep()
 
@@ -148,6 +145,8 @@ toast_print("Connecting")
 
 import wifi
 wifi.do_connect()
+
+turn_on(toast_print)
 
 toast_print("Fetching state")
 
@@ -184,22 +183,14 @@ while True:
         
     switch_pressed = pin_switch.value() == 1
     if (switch_pressed and switch_pressed != last_switch_state):
-        if not display_state:
-            display_state = True
-            display.poweron()
-            refresh_sleep_timer(sleep_timer, display)
-            update_display(display, light_state)
-            light_state.state = True
-            fetch = True
-        else:
-            light_state.state = not light_state.state
+        light_state.state = not light_state.state
         changed = True
         print('light on: ' + str(light_state.state))
         delay_enabled = False
     last_switch_state = switch_pressed
     
 
-    if changed and display_state:
+    if changed:
         refresh_sleep_timer(sleep_timer, display)
         update_timer.deinit()
         update_display(display, light_state)
