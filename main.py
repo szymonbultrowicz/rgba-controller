@@ -2,6 +2,7 @@ import math
 from machine import Pin, ADC, Timer, I2C, deepsleep
 import time
 import ssd1306
+import esp32
 import config
 
 from models import LightState, AnalogueValue
@@ -127,8 +128,9 @@ def update_display(display, light_state):
 def turn_off(display):
     print('Going to sleep')
     display.poweroff()
-    global display_state
-    display_state = False
+    # global display_state
+    # display_state = False
+    deepsleep()
     # deepsleep()
 
 def refresh_sleep_timer(timer, display):
@@ -163,9 +165,12 @@ update_timer = Timer(1)
 sleep_timer = Timer(2)
 refresh_sleep_timer(sleep_timer, display)
 
+esp32.wake_on_ext0(pin = pin_switch, level = esp32.WAKEUP_ANY_HIGH)
+
 while True:
     changed = False
     delay_enabled = True
+    fetch = False
 
     brightness_reading = convert_255(pin_pot_brightness.read())
     if apply_value(light_state.brightness, brightness_reading, ema_a):
@@ -184,11 +189,13 @@ while True:
             display.poweron()
             refresh_sleep_timer(sleep_timer, display)
             update_display(display, light_state)
+            light_state.state = True
+            fetch = True
         else:
-            changed = True
             light_state.state = not light_state.state
-            print('light on: ' + str(light_state.state))
-            delay_enabled = False
+        changed = True
+        print('light on: ' + str(light_state.state))
+        delay_enabled = False
     last_switch_state = switch_pressed
     
 
@@ -196,11 +203,19 @@ while True:
         refresh_sleep_timer(sleep_timer, display)
         update_timer.deinit()
         update_display(display, light_state)
-        update_timer.init(
-            mode=Timer.ONE_SHOT,
-            period=500,
-            callback=lambda t:update_state(light_state, toast_print)
-        )
+        if delay_enabled:
+            update_timer.init(
+                mode=Timer.ONE_SHOT,
+                period=500,
+                callback=lambda t:update_state(light_state, toast_print)
+            )
+        else:
+            update_state(light_state, toast_print)
+
+    if fetch:
+        toast_print("Fetching state")
+        light_state = fetch_state()
+        update_display(display, light_state)
         
 
     time.sleep_us(20)

@@ -11,8 +11,10 @@ def fetch_state():
 
     if (response.status_code > 200):
         print("Failed to fetch recent state, error code: " + str(response.status_code))
+        response.close()
         return None
     response_state = response.json()
+    response.close()
     light_state = LightState(
         state=response_state["state"] == 'on',
         brightness = response_state["attributes"]["brightness"] if "brightness" in response_state["attributes"] else 100,
@@ -32,3 +34,4 @@ def update_state(state, toast_print):
     }, json=data)
     print("Update response code: " + str(response.status_code))
     toast_print("Updated (" + str(response.status_code) + ")", True)
+    response.close()
